@@ -1,4 +1,7 @@
-import psycopg2 # PostgreSQL database adapter for Python
+import psycopg2  # PostgreSQL database adapter for Python
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from models import Base  # Assumes models.py exists with Base
 
 DB_NAME = "neighbourhoodToolapp"
 DB_USER = "postgres"
@@ -6,8 +9,11 @@ DB_PASSWORD = "limo91we"
 DB_HOST = "localhost"
 DB_PORT = "5432"
 
+# SQLAlchemy DB URL (equivalent to psycopg2 params)
+DB_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+
 def connect_and_query(query: str):
-    # Connect to your postgres DB
+    # Raw psycopg2 connection (keep for legacy/raw SQL)
     connection = None
     try:
         connection = psycopg2.connect(
@@ -18,7 +24,7 @@ def connect_and_query(query: str):
             port=DB_PORT
         )
         cursor = connection.cursor()
-        print("Connected to the database successfully")
+        print("Connected to the database successfully (psycopg2)")
         cursor.execute(query)
         results = cursor.fetchall()
         cursor.close()
@@ -28,13 +34,39 @@ def connect_and_query(query: str):
     finally:
         if connection:
             connection.close()
-            print("Database connection closed.")
+            print("Database connection closed (psycopg2).")
 
-# Test the connection with a simple query (since DB is empty, use SELECT 1)
+def create_tables_and_test_orm():
+    # SQLAlchemy setup for table creation and ORM test
+    engine = create_engine(DB_URL)
+    
+    # Create tables from models
+    Base.metadata.create_all(bind=engine)
+    print("Tables created/verified via SQLAlchemy!")
+    
+    # Test ORM session
+    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    with SessionLocal() as session:
+        try:
+            result = session.execute("SELECT 1")
+            print("ORM session connected successfully!")
+            print(f"ORM query result: {result.scalar()}")
+            session.close()
+        except Exception as error:
+            print(f"ORM error: {error}")
+
+# Test both connections
 if __name__ == "__main__":
     test_query = "SELECT 1;"
+    
+    # Test psycopg2
+    print("Testing psycopg2...")
     results = connect_and_query(test_query)
     if results:
-        print(f"Query successful! Results: {results}")
+        print(f"Psycopg2 successful! Results: {results}")
     else:
-        print("No results, but connection worked!")
+        print("No results, but psycopg2 worked!")
+    
+    print("\nTesting SQLAlchemy...")
+    create_tables_and_test_orm()
+    print("All tests passed! Ready for models.")
