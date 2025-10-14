@@ -9,11 +9,11 @@ DB_PASSWORD = "limo91we"
 DB_HOST = "localhost"
 DB_PORT = "5432"
 
-# SQLAlchemy DB URL (equivalent to psycopg2 params)
+# SQLAlchemy DB URL
 DB_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
 def connect_and_query(query: str):
-    # Raw psycopg2 connection (keep for legacy/raw SQL)
+    # Raw psycopg2 connection
     connection = None
     try:
         connection = psycopg2.connect(
@@ -37,36 +37,28 @@ def connect_and_query(query: str):
             print("Database connection closed (psycopg2).")
 
 def create_tables_and_test_orm():
-    # SQLAlchemy setup for table creation and ORM test
+    # SQLAlchemy setup
     engine = create_engine(DB_URL)
-    
-    # Create tables from models
     Base.metadata.create_all(bind=engine)
     print("Tables created/verified via SQLAlchemy!")
     
-    # Test ORM session
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     with SessionLocal() as session:
         try:
             result = session.execute("SELECT 1")
             print("ORM session connected successfully!")
             print(f"ORM query result: {result.scalar()}")
-            session.close()
         except Exception as error:
             print(f"ORM error: {error}")
 
-# Test both connections
+# Test both
 if __name__ == "__main__":
     test_query = "SELECT 1;"
-    
-    # Test psycopg2
     print("Testing psycopg2...")
     results = connect_and_query(test_query)
     if results:
         print(f"Psycopg2 successful! Results: {results}")
-    else:
-        print("No results, but psycopg2 worked!")
     
     print("\nTesting SQLAlchemy...")
     create_tables_and_test_orm()
-    print("All tests passed! Ready for models.")
+    print("All tests passed!")
