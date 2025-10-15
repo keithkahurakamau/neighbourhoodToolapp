@@ -3,7 +3,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import IntegrityError
 from models import Base, Neighbor, Tool, Loan
 from datetime import date
-
+from sqlalchemy.exc import IntegrityError
 DB_URL = 'postgresql://postgres:limo91we@localhost:5432/neighbourhoodToolapp'
 
 engine = create_engine(DB_URL)
@@ -15,14 +15,13 @@ def get_session():
 
 # CREATE
 def create_neighbor(session, name, address, email):
-    """Create a new neighbor."""
     try:
         if not email or '@' not in email:
             raise ValueError("Invalid email format")
         neighbor = Neighbor(name=name, address=address, email=email)
         session.add(neighbor)
         session.commit()
-        session.refresh(neighbor)  # Reload for relationships
+        session.refresh(neighbor)
         return neighbor
     except IntegrityError:
         session.rollback()
@@ -32,8 +31,9 @@ def create_neighbor(session, name, address, email):
         raise e
 
 def create_tool(session, name, description, owner_id):
-    """Create a new tool for an owner."""
     try:
+        if not owner_id:
+            raise ValueError("Owner ID required")
         tool = Tool(name=name, description=description, owner_id=owner_id)
         session.add(tool)
         session.commit()
@@ -47,8 +47,9 @@ def create_tool(session, name, description, owner_id):
         raise e
 
 def create_loan(session, borrower_id, tool_id, loan_date, due_date):
-    """Create a new loan."""
     try:
+        if due_date <= loan_date:
+            raise ValueError("Due date must be after loan date")
         loan = Loan(borrower_id=borrower_id, tool_id=tool_id, loan_date=loan_date, due_date=due_date)
         session.add(loan)
         session.commit()
