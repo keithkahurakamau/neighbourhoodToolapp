@@ -50,19 +50,19 @@ def get_all_tools(session):
     """Get all tools."""
     return session.query(Tool).all()
 
-# Quick test
+## Quick test for base CRUD
 if __name__ == "__main__":
     with get_session() as session:
-        # Ensure tables exist for test
+        # Ensure tables exist
         Base.metadata.create_all(engine)
         
-        # Clean slate (safe now)
+        # Clean slate
         session.query(Loan).delete()
         session.query(Tool).delete()
         session.query(Neighbor).delete()
         session.commit()
 
-        # Sample CRUD
+        # Sample CREATE & READ
         alice = create_neighbor(session, 'Alice', '123 Oak St', 'alice@test.com')
         print(f"Created neighbor: {alice.name} (ID: {alice.id})")
         
@@ -74,3 +74,6 @@ if __name__ == "__main__":
         
         neighbors = get_all_neighbors(session)
         print(f"All neighbors: {len(neighbors)}")
+        
+        tools = get_all_tools(session)
+        print(f"All tools: {len(tools)}")
