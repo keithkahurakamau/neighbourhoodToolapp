@@ -2,7 +2,7 @@
 
 [![Python](https://img.shields.io/badge/Python-3.12-blue)](https://www.python.org/downloads/) [![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-2.0-green)](https://www.sqlalchemy.org/) [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-yellow)](https://www.postgresql.org/)
 
-A sustainable CLI app for neighbors to lend and borrow tools, reducing waste and building community. Built for Moringa School Phase 3: Python OOP, SQLAlchemy ORM, relational DB (Postgres), CRUD operations, and pytest.
+A sustainable CLI app for neighbors to lend and borrow tools, reducing waste and building community. Personal Project for improving my skills in : Python OOP, SQLAlchemy ORM, relational DB (Postgres), CRUD operations, and pytest.
 
 ## Description
 
@@ -183,9 +183,9 @@ MIT License—free to use/modify.
 
 ## Demo & Contact
 - Demo Video: [Link to recording] (add neighbor, loan tool, return, list overdues).
-- Author: Keith Kahura Kamau (Moringa Phase 3).
-- Questions? Open issue.
+- Author: Software Engineer Keith Kahura Kamau.
+- Questions? Open issue on github .
 
 ---
 
-*Built with love for sustainable communities. Share tools, save the planet! 🌍*
+*Built with love for sustainable communities. Share tools, save the planet! *
