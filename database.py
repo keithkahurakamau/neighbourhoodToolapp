@@ -3,7 +3,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import IntegrityError
 from models import Base, Neighbor, Tool, Loan
 from datetime import date
-from sqlalchemy.exc import IntegrityError
+
 DB_URL = 'postgresql://postgres:limo91we@localhost:5432/neighbourhoodToolapp'
 
 engine = create_engine(DB_URL)
@@ -15,13 +15,14 @@ def get_session():
 
 # CREATE
 def create_neighbor(session, name, address, email):
+    """Create a new neighbor."""
     try:
         if not email or '@' not in email:
             raise ValueError("Invalid email format")
         neighbor = Neighbor(name=name, address=address, email=email)
         session.add(neighbor)
         session.commit()
-        session.refresh(neighbor)
+        session.refresh(neighbor)  # Reload for relationships
         return neighbor
     except IntegrityError:
         session.rollback()
@@ -31,6 +32,7 @@ def create_neighbor(session, name, address, email):
         raise e
 
 def create_tool(session, name, description, owner_id):
+    """Create a new tool for an owner."""
     try:
         if not owner_id:
             raise ValueError("Owner ID required")
@@ -47,9 +49,16 @@ def create_tool(session, name, description, owner_id):
         raise e
 
 def create_loan(session, borrower_id, tool_id, loan_date, due_date):
+    """Create a new loan with availability check."""
     try:
         if due_date <= loan_date:
             raise ValueError("Due date must be after loan date")
+        
+        # Availability check: Is tool currently loaned (return_date is None)?
+        active_loan = session.query(Loan).filter(Loan.tool_id == tool_id, Loan.return_date.is_(None)).first()
+        if active_loan:
+            raise ValueError("Tool is currently loaned out—cannot borrow again until returned.")
+        
         loan = Loan(borrower_id=borrower_id, tool_id=tool_id, loan_date=loan_date, due_date=due_date)
         session.add(loan)
         session.commit()
@@ -85,6 +94,13 @@ def get_overdue_loans(session):
     return session.query(Loan).join(Tool).join(Neighbor).filter(
         Loan.due_date < date.today(), Loan.return_date.is_(None)
     ).all()
+
+def get_all_loans(session):
+    """Get all loans with borrower and tool names via explicit JOIN."""
+    return session.query(
+        Loan.id, Neighbor.name.label('borrower_name'), Tool.name.label('tool_name'),
+        Loan.loan_date, Loan.due_date, Loan.return_date, Loan.condition_note
+    ).select_from(Loan).join(Neighbor, Loan.borrower_id == Neighbor.id).join(Tool, Loan.tool_id == Tool.id).order_by(Loan.id.desc()).all()
 
 # UPDATE
 def update_loan_return(session, loan_id, return_date, condition_note):
@@ -129,6 +145,12 @@ if __name__ == "__main__":
         loan = create_loan(session, alice.id, drill.id, date.today(), date.today().replace(day=21))
         print(f"Created loan: ID {loan.id}")
         
+        # Test availability check (try to loan same tool again)
+        try:
+            duplicate_loan = create_loan(session, alice.id, drill.id, date.today(), date.today().replace(day=21))
+        except ValueError as e:
+            print(f"Availability error: {e}")  # "Tool is currently loaned out..."
+        
         neighbors = get_all_neighbors(session)
         print(f"All neighbors: {len(neighbors)}")
         
@@ -146,3 +168,10 @@ if __name__ == "__main__":
         
         overdues = get_overdue_loans(session)
         print(f"Overdue loans: {len(overdues)}")
+        
+        # New: List all loans
+        loans = get_all_loans(session)
+        print(f"All loans: {len(loans)}")
+        for l in loans:
+            status = "Returned" if l.return_date else "Active"
+            print(f"- ID {l.id}, Borrower: {l.borrower_name}, Tool: {l.tool_name}, Due: {l.due_date}, Status: {status}, Note: {l.condition_note or 'N/A'}")
